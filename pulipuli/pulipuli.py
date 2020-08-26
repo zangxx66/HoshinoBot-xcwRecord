@@ -6,6 +6,7 @@ from aiocqhttp.message import MessageSegment
 
 sv = Service('pulipuli', enable_on_default=True)
 
+
 def humanNum(num):
     if num < 10000:
         return num
@@ -18,7 +19,7 @@ def humanNum(num):
 def getVideoInfo(param_aid, param_bvid):
     url = f'https://api.bilibili.com/x/web-interface/view?aid={param_aid}&bvid={param_bvid}'
     try:
-        with requests.get(url,timeout=20) as resp:
+        with requests.get(url, timeout=20) as resp:
             res = resp.json()
             data = res['data']
             bvid = data['bvid']
@@ -43,9 +44,9 @@ def getSearchVideoInfo(keyword):
     try:
         with requests.get(url, timeout=20) as resp:
             res = resp.json()
-            data = res.data.result
-            videos = filter(lambda x:x['result_type'] == 'video', data)
-            if (len(videos) == 0) :
+            data = res['data']['result']
+            videos = [x for x in data if x['result_type'] == 'video']
+            if (len(videos) == 0):
                 return None
             video = videos[0]['data'][0]
             aid = video['aid']
@@ -64,12 +65,13 @@ def getSearchVideoInfo(keyword):
 
 
 def getAvBvFromNormalLink(link):
-    if isinstance(link,str) is False:
+    if isinstance(link, str) is False:
         return None
-    search = re.findall(r'bilibili\.com\/video\/(?:[Aa][Vv]([0-9]+)|([Bb][Vv][0-9a-zA-Z]+))', link)
+    search = re.findall(
+        r'bilibili\.com\/video\/(?:[Aa][Vv]([0-9]+)|([Bb][Vv][0-9a-zA-Z]+))', link)
     if len(search) <= 0:
         return search
-    result = {'aid':search[0][0],'bvid':search[0][1]}
+    result = {'aid': search[0][0], 'bvid': search[0][1]}
     return result
 
 
@@ -77,7 +79,7 @@ def getAvBvFromShortLink(link):
     try:
         with requests.head(link, timeout=20) as resp:
             status = resp.status_code
-            if(status >= 200 and status <400):
+            if(status >= 200 and status < 400):
                 location = resp.headers['location']
                 normal_link = getAvBvFromNormalLink(location)
                 return normal_link
@@ -99,11 +101,11 @@ def getAvBvFromMsg(msg):
 
 
 def unescape(param):
-    a = param.replace('#44;',',')
-    b = re.sub(r'&#91;','[',a)
-    c = re.sub(r'&#93;',']',b)
-    d = c.replace('\\/','/')
-    result = re.sub(r'&amp;','&',d)
+    a = param.replace('#44;', ',')
+    b = re.sub(r'&#91;', '[', a)
+    c = re.sub(r'&#93;', ']', b)
+    d = c.replace('\\/', '/')
+    result = re.sub(r'&amp;', '&', d)
     return result
 
 
@@ -117,7 +119,7 @@ async def pulipuli(bot, event):
     msg = str(event.message)
     msg = unescape(msg)
     title = None
-    is_match = re.findall(r'\[CQ:rich,.*\]?\S*',msg)
+    is_match = re.findall(r'\[CQ:rich,.*\]?\S*', msg)
     keyword1 = '&#91;QQ小程序&#93;哔哩哔哩'
     keyword2 = '[[QQ小程序]哔哩哔哩]'
     if len(is_match) > 0:
@@ -125,9 +127,9 @@ async def pulipuli(bot, event):
         if match_msg(keyword1, msg) == True or match_msg(keyword2, msg) == True:
             sv.logger.info('[pulipuli INFO] fuck mini program')
             await bot.send(event, R.img('fuckapp.png').cqcode)
-            search = re.findall(r'"desc":"(.+?)"',msg)
+            search = re.findall(r'"desc":"(.+?)"', msg)
             if len(search) > 0:
-                title = re.sub(r'/\\"/g','"',search[1])
+                title = re.sub(r'/\\"/g', '"', search[1])
     param = getAvBvFromMsg(msg)
     if param is None:
         pass
@@ -136,9 +138,10 @@ async def pulipuli(bot, event):
         if reply is not None:
             await bot.send(event, reply)
             return
-    isBangumi = re.search(r'bilibili\.com\/bangumi|(b23|acg)\.tv\/(ep|ss)',msg)
-    if isinstance(title,str) and isBangumi:
+    isBangumi = re.search(
+        r'bilibili\.com\/bangumi|(b23|acg)\.tv\/(ep|ss)', msg)
+    if isinstance(title, str) and isBangumi:
         reply = getSearchVideoInfo(title)
         if reply is not None:
             await bot.send(event, reply)
-            return 
+            return
