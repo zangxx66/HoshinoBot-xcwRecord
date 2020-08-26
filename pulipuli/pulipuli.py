@@ -99,25 +99,35 @@ def getAvBvFromMsg(msg):
 
 
 def unescape(param):
-    a = re.sub(r'/&#44;/g',',',param)
-    b = re.sub(r'/&#91;/g','[',a)
-    c = re.sub(r'/&#93;/g',']',b)
-    result = re.sub(r'/&amp;/g','&',c)
+    a = param.replace('#44;',',')
+    b = re.sub(r'&#91;','[',a)
+    c = re.sub(r'&#93;',']',b)
+    d = c.replace('\\/','/')
+    result = re.sub(r'&amp;','&',d)
     return result
+
+
+def match_msg(keyword, msg):
+    return keyword in msg
 
 
 @sv.on_message('group')
 async def pulipuli(bot, event):
     gid = event.group_id
     msg = str(event.message)
+    msg = unescape(msg)
     title = None
     is_match = re.findall(r'\[CQ:rich,.*\]?\S*',msg)
-    if len(is_match) > 0 and '&amp;#91;QQ小程序&amp;#93;哔哩哔哩' in msg:
-        await bot.send(event, R.img('fuckapp.png').cqcode)
-        escape = unescape(msg)
-        search = re.findall(r'"desc":"(.+?)"(?:,|})',escape)
-        if len(search) > 0:
-            title = re.sub(r'/\\"/g',search[0])
+    keyword1 = '&#91;QQ小程序&#93;哔哩哔哩'
+    keyword2 = '[[QQ小程序]哔哩哔哩]'
+    if len(is_match) > 0:
+        sv.logger.info('[pulipuli INFO] is_match is True')
+        if match_msg(keyword1, msg) == True or match_msg(keyword2, msg) == True:
+            sv.logger.info('[pulipuli INFO] fuck mini program')
+            await bot.send(event, R.img('fuckapp.png').cqcode)
+            search = re.findall(r'"desc":"(.+?)"',msg)
+            if len(search) > 0:
+                title = re.sub(r'/\\"/g','"',search[1])
     param = getAvBvFromMsg(msg)
     if param is None:
         pass
