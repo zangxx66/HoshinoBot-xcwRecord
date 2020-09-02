@@ -15,9 +15,10 @@ def query(keyword):
             code = int(res['code'])
             if code != 200:
                 return f'查询错误Code:{code}'
-            songs = res['result']['songs']
-            if len(songs) < 1:
+            count = res['result']['songCount']
+            if int(count) < 1:
                 return f'没有查询到关于{keyword}的歌曲信息'
+            songs = res['result']['songs']
             id = songs[0]['id']
             return int(id)
     except Exception as ex:
