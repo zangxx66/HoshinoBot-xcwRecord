@@ -9,7 +9,7 @@ from nonebot import MessageSegment
 from hoshino import R, Service, priv
 
 
-sv = Service('mawo', manage_priv=priv.SUPERUSER, enable_on_default=True, visible=False)
+sv = Service('mawo', enable_on_default=True, visible=False)
 xcw_folder = R.get('record/mawo/').path
 
 
