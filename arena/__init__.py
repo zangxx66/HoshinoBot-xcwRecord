@@ -6,6 +6,7 @@ import hoshino
 from hoshino import Service
 from hoshino.typing import *
 from hoshino.util import FreqLimiter, concat_pic, pic2b64
+from PIL import Image, ImageSequence, ImageDraw, ImageFont
 
 from .. import chara
 from . import data
@@ -21,22 +22,27 @@ from . import arena
 
 lmt = FreqLimiter(5)
 
-aliases = ('怎么拆', '怎么解', '怎么打', '如何拆', '如何解', '如何打', '怎麼拆', '怎麼解', '怎麼打', 'jjc查询', 'jjc查詢')
+aliases = ('怎么拆', '怎么解', '怎么打', '如何拆', '如何解', '如何打',
+           '怎麼拆', '怎麼解', '怎麼打', 'jjc查询', 'jjc查詢')
 aliases_b = tuple('b' + a for a in aliases) + tuple('B' + a for a in aliases)
 aliases_tw = tuple('台' + a for a in aliases)
 aliases_jp = tuple('日' + a for a in aliases)
+
 
 @sv.on_prefix(aliases)
 async def arena_query(bot, ev):
     await _arena_query(bot, ev, region=1)
 
+
 @sv.on_prefix(aliases_b)
 async def arena_query_b(bot, ev):
     await _arena_query(bot, ev, region=2)
 
+
 @sv.on_prefix(aliases_tw)
 async def arena_query_tw(bot, ev):
     await _arena_query(bot, ev, region=3)
+
 
 @sv.on_prefix(aliases_jp)
 async def arena_query_jp(bot, ev):
@@ -90,25 +96,27 @@ async def _arena_query(bot, ev: CQEvent, region: int):
         await bot.finish(ev, '抱歉没有查询到解法\n※没有作业说明随便拆 发挥你的想象力～★\n作业上传请前往pcrdfans.com', at_sender=True)
     res = res[:min(6, len(res))]    # 限制显示数量，截断结果
 
-    # 发送回复
-    if hoshino.config.USE_CQPRO:
-        # sv.logger.info('Arena generating picture...')
-        atk_team = [ chara.gen_team_pic(entry['atk']) for entry in res ]
-        atk_team = concat_pic(atk_team)
-        atk_team = pic2b64(atk_team)
-        atk_team = str(MessageSegment.image(atk_team))
-        # sv.logger.info('Arena picture ready!')
-    else:
-        atk_team = '\n'.join(map(lambda entry: ' '.join(map(lambda x: f"{x.name}{x.star if x.star else ''}{'专' if x.equip else ''}" , entry['atk'])) , res))
+    atk_team = []
+    absPath = "/root/HoshinoBot/hoshino/modules/priconne/arena"  # 这里是该hoshino模组的绝对路径
+    font_path = f'{absPath}/font/seguiemj.ttf'
+    for v in res:
+        atk = v['atk']
+        team_pic = chara.gen_team_pic(atk)
+        up = v['up'] + v['my_up']
+        down = v['down'] + v['my_down']
+        qkey = v['qkey']
+        pingjia = f'{qkey}\n\U0001F44D{up}\n\U0001F44E{down}'
+        target = Image.new('RGBA', (64*6, 64), (255, 255, 255, 255))
+        draw = ImageDraw.Draw(target)
+        ttffont = ImageFont.truetype(font_path, 18)
+        draw.text((64*5, 0), pingjia, font=ttffont, fill='#000000')
+        target.paste(team_pic, (0, 0))
+        atk_team.append(target)
+    atk_team = concat_pic(atk_team)
+    atk_team = pic2b64(atk_team)
+    atk_team = str(MessageSegment.image(atk_team))
 
-    details = [ " ".join([
-        f"赞{e['up']}+{e['my_up']}" if e['my_up'] else f"赞{e['up']}",
-        f"踩{e['down']}+{e['my_down']}" if e['my_down'] else f"踩{e['down']}",
-        e['qkey'],
-        "你赞过" if e['user_like'] > 0 else "你踩过" if e['user_like'] < 0 else ""
-    ]) for e in res ]
-
-    defen = [ chara.fromid(x).name for x in defen ]
+    defen = [chara.fromid(x).name for x in defen]
     defen = f"防守方【{' '.join(defen)}】"
     at = str(MessageSegment.at(ev.user_id))
 
@@ -116,8 +124,6 @@ async def _arena_query(bot, ev: CQEvent, region: int):
         defen,
         f'已为骑士{at}查询到以下进攻方案：',
         str(atk_team),
-        f'作业评价：',
-        *details,
         '※发送"点赞/点踩"可进行评价'
     ]
     if region == 1:
@@ -140,7 +146,9 @@ async def arena_dislike(bot, ev):
 
 
 rex_qkey = re.compile(r'^[0-9a-zA-Z]{5}$')
-async def _arena_feedback(bot, ev: CQEvent, action:int):
+
+
+async def _arena_feedback(bot, ev: CQEvent, action: int):
     action_tip = '赞' if action > 0 else '踩'
     qkey = ev.message.extract_plain_text().strip()
     if not qkey:
