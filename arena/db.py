@@ -25,7 +25,7 @@ class JijianCounter:
     def add_attack(self, attack, result):
         try:
             conn = self._connect()
-            conn.execute("INSERT INTO JIJIAN (ATTACK, DEFEND) \
+            conn.execute("INSERT OR REPLACE INTO JIJIAN (ATTACK, DEFEND) \
                          VALUES (?, ?)", (attack, result))
             conn.commit()
         except:

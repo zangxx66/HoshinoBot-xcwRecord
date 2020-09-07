@@ -112,11 +112,13 @@ def __get_auth_key():
     return config.priconne.arena.AUTH_KEY
 
 
-async def do_query(id_list, user_id, region=1):
+async def do_query(id_list, user_id, region=1, force=False):
     id_list = [ x * 100 + 1 for x in id_list ]
-    attack = ",".join(str(v) for v in id_list)
+    t = id_list.copy()
+    t.sort()
+    attack = ",".join(str(v) for v in t)
     result_list = jijian.get_attack(attack)
-    if result_list is None:
+    if result_list is None or force:
         header = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36',
             'authorization': __get_auth_key()
@@ -133,9 +135,8 @@ async def do_query(id_list, user_id, region=1):
 
         if res['code']:
             code = int(res['code'])
-            reason = data.ERROR_CODE[code]
             logger.error(f"Arena query failed.\nResponse={res}\nPayload={payload}")
-            return f'Arena query failed.\nCode={code}\nReason={reason}'
+            return f'Arena query failed.\nCode={code}'
 
         result_list = res['data']['result']
         result = ','.join(str(v) for v in result_list)
