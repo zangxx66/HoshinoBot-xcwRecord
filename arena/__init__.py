@@ -24,6 +24,9 @@ from . import arena
 
 lmt = FreqLimiter(5)
 jijian = JijianCounter()
+current_path = os.path.abspath(__file__)
+absPath = os.path.abspath(os.path.dirname(current_path) + os.path.sep + ".")
+font_path = f'{absPath}/font/seguiemj.ttf'
 
 aliases = ('怎么拆', '怎么解', '怎么打', '如何拆', '如何解', '如何打',
            '怎麼拆', '怎麼解', '怎麼打', 'jjc查询', 'jjc查詢')
@@ -90,12 +93,12 @@ async def _arena_query(bot, ev: CQEvent, region: int, refresh=False):
     defen_list = defen.copy()
     defen_list.sort()
     filename = '-'.join(str(v) for v in defen_list)
-    filename = f'{filename}.png'
+    filename = f'{filename}.jpg'
     if os.path.exists(outpath) is False:
         os.mkdir(outpath)
     save_path = R.img('tmp/', filename).path
 
-    if refresh:
+    if refresh and os.path.exists(save_path):
         os.remove(save_path)
 
     # 执行查询
@@ -112,10 +115,6 @@ async def _arena_query(bot, ev: CQEvent, region: int, refresh=False):
 
     # 第一次查询，无本地缓存
     if os.path.exists(save_path) is False:
-        current_path = os.path.abspath(__file__)
-        absPath = os.path.abspath(os.path.dirname(current_path) + os.path.sep + ".")
-        font_path = f'{absPath}/font/seguiemj.ttf'
-
         size = len(res)
         target = Image.new('RGBA', (64*6, 64*size), (255, 255, 255, 255))
         draw = ImageDraw.Draw(target)
@@ -131,7 +130,8 @@ async def _arena_query(bot, ev: CQEvent, region: int, refresh=False):
             draw.text((64*5, 64*index), pingjia, font=ttffont, fill='#000000')
             target.paste(team_pic, (0, 64*index))
             index += 1
-        target.save(save_path, quality=80)
+        target = optimize_pic(target)
+        target.save(save_path, format='JPEG', quality=50, optimize=True, progressive=True)
     # 拼接回复
     atk_team = MessageSegment.image(f'file:///{os.path.abspath(save_path)}')
     defen = [chara.fromid(x).name for x in defen]
@@ -149,6 +149,14 @@ async def _arena_query(bot, ev: CQEvent, region: int, refresh=False):
 
     await bot.send(ev, '\n'.join(msg))
     # sv.logger.debug('Arena result sent!')
+
+
+def optimize_pic(img: Image):
+    im = Image.new('RGB', img.size, '#ffffff')
+    im.paste(img, None, img)
+    w, h = im.size
+    im.thumbnail((w / 0.9, h / 0.9), Image.ANTIALIAS)
+    return im
 
 
 @sv.on_prefix('点赞')
@@ -204,4 +212,4 @@ async def query_error_code(bot, event):
 @sv.on_prefix('刷新作业')
 async def refresh_deffend(bot, ev):
     # 执行查询
-    _arena_query(bot, ev, 1, True)
+    await _arena_query(bot, ev, 1, True)
