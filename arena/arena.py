@@ -2,7 +2,6 @@ import base64
 import os
 import time
 from collections import defaultdict
-
 from hoshino import aiorequests, config, util
 
 from .. import chara
@@ -165,6 +164,44 @@ async def do_query(id_list, user_id, region=1, force=False):
         })
         index += 1
     return ret
+
+
+async def http_query(id_list, user_id, region=1, force=False):
+    # id_list = [ x * 100 + 1 for x in id_list ]
+    t = id_list.copy()
+    t.sort()
+    attack = ",".join(str(v) for v in t)
+    result_list = jijian.get_attack(attack)
+    if result_list is None or force:
+        header = {
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36',
+            'authorization': __get_auth_key()
+        }
+        payload = {"_sign": "a", "def": id_list, "nonce": "a", "page": 1, "sort": 1, "ts": int(time.time()), "region": region}
+        logger.debug(f'Arena query {payload=}')
+        try:
+            resp = await aiorequests.post('https://api.pcrdfans.com/x/v1/search', headers=header, json=payload, timeout=10)
+            res = await resp.json()
+            logger.debug(f'len(res)={len(res)}')
+        except Exception as e:
+            logger.exception(e)
+            return None
+
+        if res['code']:
+            code = int(res['code'])
+            logger.error(f"Arena query failed.\nResponse={res}\nPayload={payload}")
+            return f'Arena query failed.\nCode={code}'
+
+        result_list = res['data']['result']
+        result = ','.join(str(v) for v in result_list)
+        jijian.add_attack(attack, result)
+        sv.logger.info('[do_query INFO]:在线查询')
+    else:
+        result_list = str(result_list)
+        result_list = eval(result_list)
+        result_list = eval(result_list[0])
+        sv.logger.info('[do_query INFO]:本地缓存')
+    return result_list
 
 
 async def do_like(qkey, user_id, action):
