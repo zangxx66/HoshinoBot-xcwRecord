@@ -20,9 +20,14 @@ anhao_sb = 'ueめんなさい'
 @app.route('/arena/query', methods=['POST'])
 async def query():
     authorization = request.headers['authorization']
-    anhao = str(base64.b64decode(authorization), 'eucjp')
-    if anhao != anhao_sb:
-        response = await gen_response('error:\nwho are you')
+    try:
+        anhao = str(base64.b64decode(authorization), 'eucjp')
+        if anhao != anhao_sb:
+            response = await gen_response('error:\nwho are you')
+            return response
+    except Exception as ex:
+        sv.logger.error(ex)
+        response = await gen_response('error:\nwdnmd')
         return response
     reqs = await request.get_json()
     key = int(reqs['ts'])
