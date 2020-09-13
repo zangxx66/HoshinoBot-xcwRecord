@@ -21,6 +21,7 @@ sv_help = '''
 sv = Service('pcr-arena', help_=sv_help, bundle='pcr查询')
 
 from . import arena
+from .reqbot import *
 
 lmt = FreqLimiter(5)
 jijian = JijianCounter()
@@ -195,18 +196,23 @@ def get_atk_id(chara_list):
     return res
 
 
-@sv.on_fullmatch('查询jjc错误码')
+@sv.on_prefix('查询jjc错误码')
 async def query_error_code(bot, event):
     code = data.ERROR_CODE
     res = ''
-    for index in code:
-        res += f'{index}:{code[index]}\n'
-    res = res.strip()
-    msg = f'''
+    msg = event.message.extract_plain_text()
+    if not msg:
+        for index in code:
+            res += f'{index}:{code[index]}\n'
+        res = res.strip()
+        res = f'''
 常见错误码如下：
 {res}
 '''.strip()
-    await bot.send(event, msg)
+    else:
+        msg = int(msg)
+        res = code[msg]
+    await bot.send(event, res)
 
 
 @sv.on_prefix('刷新作业')
