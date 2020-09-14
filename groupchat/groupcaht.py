@@ -89,8 +89,9 @@ async def send_poke(bot, event):
 
 @sv.on_notice('notify')
 async def get_poke(session: NoticeSession):
-    if session.event['sub_type'] == 'poke':
-        send_id = session.event['user_id']
+    event = session.event
+    if event['sub_type'] == 'poke' and event['self_id'] == event['target_id']:
+        send_id = event['user_id']
         poke = MessageSegment(type_='poke', data={'qq': send_id})
         await session.send(poke)
 
