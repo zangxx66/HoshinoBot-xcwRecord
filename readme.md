@@ -3,6 +3,7 @@
 ## 食用
 1.将xcw文件夹放入modules目录下，并在config里启用该模组  
 2.将record/mawo文件夹放在HoshinoBot/res/record根目录下  
+**[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)0.9.28及以上版本请自行安装依赖ffmpeg，0.9.28以下版本仅支持amr格式但不依赖ffmpeg**
 ## 指令
 |指令|说明|
 |-----|-----|
