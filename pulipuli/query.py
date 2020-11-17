@@ -36,14 +36,16 @@ def getSearchVideoInfo(keyword):
                 aid = item['aid']
                 bvid = item['bvid']
                 pic = item['pic']
+                desc = html2text.html2text(item['description'])
                 play = humanNum(item['play'])
                 danku = humanNum(item['video_review'])
                 title = html2text.html2text(item['title'])
                 title = title.strip()
-                cover = MessageSegment.image(f'http://{pic}')
+                cover = MessageSegment.image(f'https:{pic}')
                 author = item['author']
                 result += f'''{cover}
 {title}
+{desc}
 av{aid}
 UP：{author}
 {play}播放  {danku}弹幕
