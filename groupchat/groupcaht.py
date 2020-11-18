@@ -179,3 +179,23 @@ async def txt_to_voice(bot, event):
         return
     tts = MessageSegment(type_='tts', data={'text': msg})
     await bot.send(event, tts)
+
+
+@sv.on_fullmatch('龙王排行榜')
+async def longwangbang(bot, event):
+    gid = event.group_id
+    data = await bot.get_group_honor_info(group_id=gid, type='talkative')
+    group = await bot.get_group_info(group_id=gid, no_cache=False)
+    group_name = group['group_name']
+    talkactive_list = data['talkative_list']
+    msg = ''
+    for index in range(len(talkactive_list)):
+        rank = index + 1
+        talkactive = talkactive_list[index]
+        nickname = talkactive['nickname']
+        desc = talkactive['description']
+        msg += f'{rank}：{nickname}获得龙王{desc}\n'
+    res = f'''群【{group_name}】龙王排行榜：
+{msg}
+'''.strip()
+    await bot.send(event, res)
