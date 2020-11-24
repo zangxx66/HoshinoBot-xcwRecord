@@ -8,6 +8,7 @@ from hoshino import Service, R
 from hoshino.typing import *
 from hoshino.util import FreqLimiter, concat_pic, pic2b64
 from PIL import Image, ImageSequence, ImageDraw, ImageFont
+from nonebot import MessageSegment
 from .db import JijianCounter
 
 from .. import chara
@@ -28,6 +29,7 @@ jijian = JijianCounter()
 current_path = os.path.abspath(__file__)
 absPath = os.path.abspath(os.path.dirname(current_path) + os.path.sep + ".")
 font_path = f'{absPath}/font/seguiemj.ttf'
+
 
 aliases = ('怎么拆', '怎么解', '怎么打', '如何拆', '如何解', '如何打',
            '怎麼拆', '怎麼解', '怎麼打', 'jjc查询', 'jjc查詢')
@@ -219,3 +221,48 @@ async def query_error_code(bot, event):
 async def refresh_deffend(bot, ev):
     # 执行查询
     await _arena_query(bot, ev, 1, True)
+
+
+@sv.on_prefix('删除作业')
+async def del_deffend(bot, ev):
+    defen = ev.message.extract_plain_text()
+    defen = re.sub(r'[?？，,_]', '', defen)
+    defen, unknown = chara.roster.parse_team(defen)
+
+    if unknown:
+        _, name, score = chara.guess_id(unknown)
+        if score < 70 and not defen:
+            return  # 忽略无关对话
+        msg = f'无法识别"{unknown}"' if score < 70 else f'无法识别"{unknown}" 您说的有{score}%可能是{name}'
+        await bot.finish(ev, msg)
+    if not defen:
+        return
+    if len(defen) > 5:
+        await bot.finish(ev, '编队不能多于5名角色', at_sender=True)
+    if len(defen) < 5:
+        await bot.finish(ev, '编队不能少于5名角色', at_sender=True)
+    if len(defen) != len(set(defen)):
+        await bot.finish(ev, '编队中含重复角色', at_sender=True)
+    if any(chara.is_npc(i) for i in defen):
+        await bot.finish(ev, '编队中含未实装角色', at_sender=True)
+    if 1004 in defen:
+        await bot.send(ev, '\n⚠️您正在查询普通版炸弹人\n※万圣版可用万圣炸弹人/瓜炸等别称', at_sender=True)
+
+    # 预处理缓存图片
+    defen_list = defen.copy()
+    defen_list.sort()
+    filename = '-'.join(str(v) for v in defen_list)
+    filename = f'{filename}.jpg'
+    save_path = R.img('tmp/', filename).path
+    if os.path.exists(save_path):
+        os.remove(save_path)
+
+    attack = ",".join(str(v) for v in defen_list)
+    # zuoye = jijian.get_attack(attack)
+    # if zuoye is None:
+    #     await bot.send(ev, '作业不存在')
+    # else:
+    #     jijian.del_attack(attack)
+    #     await bot.send(ev, '删除作业完了')
+    jijian.del_attack(attack)
+    await bot.send(ev, '删除作业完了')

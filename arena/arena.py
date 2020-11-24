@@ -33,7 +33,8 @@ try:
             'dislike': set(DB[k].get('dislike', set()))
         }
 except FileNotFoundError:
-    logger.warning(f'arena_db.json not found, will create when needed.')
+    logger.warning('arena_db.json not found, will create when needed.')
+
 
 def dump_db():
     '''
@@ -49,35 +50,40 @@ def dump_db():
     with open(DB_PATH, 'w', encoding='utf8') as f:
         json.dump(j, f, ensure_ascii=False)
 
+
 def get_likes(id_):
     return DB.get(id_, {}).get('like', set())
 
+
 def add_like(id_, uid):
     e = DB.get(id_, {})
-    l = e.get('like', set())
+    f = e.get('like', set())
     k = e.get('dislike', set())
-    l.add(uid)
+    f.add(uid)
     k.discard(uid)
-    e['like'] = l
+    e['like'] = f
     e['dislike'] = k
     DB[id_] = e
+
 
 def get_dislikes(id_):
     return DB.get(id_, {}).get('dislike', set())
 
+
 def add_dislike(id_, uid):
     e = DB.get(id_, {})
-    l = e.get('like', set())
+    f = e.get('like', set())
     k = e.get('dislike', set())
-    l.discard(uid)
+    f.discard(uid)
     k.add(uid)
-    e['like'] = l
+    e['like'] = f
     e['dislike'] = k
     DB[id_] = e
 
 
 _last_query_time = 0
 quick_key_dic = {}      # {quick_key: true_id}
+
 
 def refresh_quick_key_dic():
     global _last_query_time
@@ -87,7 +93,7 @@ def refresh_quick_key_dic():
     _last_query_time = now
 
 
-def gen_quick_key(true_id:str, user_id:int) -> str:
+def gen_quick_key(true_id: str, user_id: int) -> str:
     qkey = int(true_id[-6:], 16)
     while qkey in quick_key_dic and quick_key_dic[qkey] != true_id:
         qkey = (qkey + 1) & 0xffffff
@@ -97,7 +103,7 @@ def gen_quick_key(true_id:str, user_id:int) -> str:
     return base64.b32encode(qkey.to_bytes(3, 'little')).decode()[:5]
 
 
-def get_true_id(quick_key:str, user_id:int) -> str:
+def get_true_id(quick_key: str, user_id: int) -> str:
     mask = user_id & 0xffffff
     if not isinstance(quick_key, str) or len(quick_key) != 5:
         return None
@@ -112,7 +118,7 @@ def __get_auth_key():
 
 
 async def do_query(id_list, user_id, region=1, force=False):
-    id_list = [ x * 100 + 1 for x in id_list ]
+    id_list = [x * 100 + 1 for x in id_list]
     t = id_list.copy()
     t.sort()
     attack = ",".join(str(v) for v in t)
@@ -130,7 +136,7 @@ async def do_query(id_list, user_id, region=1, force=False):
             logger.debug(f'len(res)={len(res)}')
         except Exception as e:
             logger.exception(e)
-            return None
+            return 'Arena query failed.'
 
         if res['code']:
             code = int(res['code'])
@@ -138,32 +144,44 @@ async def do_query(id_list, user_id, region=1, force=False):
             return f'Arena query failed.\nCode={code}'
 
         result_list = res['data']['result']
+        # logger.info(f'[do_query INFO]{res}')
+        if not result_list:
+            return []
         result = ','.join(str(v) for v in result_list)
         jijian.add_attack(attack, result)
-        sv.logger.info('[do_query INFO]:在线查询')
+        logger.info('[do_query INFO]:在线查询')
     else:
-        result_list = str(result_list)
-        result_list = eval(result_list)
-        result_list = eval(result_list[0])
-        sv.logger.info('[do_query INFO]:本地缓存')
+        try:
+            # logger.info(f'[do_query INFO]{result_list}')
+            result_list = str(result_list)
+            result_list = eval(result_list)
+            result_list = eval(result_list[0])
+            logger.info('[do_query INFO]:本地缓存')
+        except Exception as e:
+            logger.exception(e)
+            return 'Arena query failed.'
 
     ret = []
     index = 0
-    for entry in result_list:
-        eid = entry['id']
-        likes = get_likes(eid)
-        dislikes = get_dislikes(eid)
-        ret.append({
-            'qkey': gen_quick_key(eid, user_id),
-            'atk': [ chara.fromid(c['id'] // 100, c['star'], c['equip']) for c in entry['atk'] ],
-            'up': entry['up'],
-            'down': entry['down'],
-            'my_up': len(likes),
-            'my_down': len(dislikes),
-            'user_like': 1 if user_id in likes else -1 if user_id in dislikes else 0
-        })
-        index += 1
-    return ret
+    try:
+        for entry in result_list:
+            eid = entry['id']
+            likes = get_likes(eid)
+            dislikes = get_dislikes(eid)
+            ret.append({
+                'qkey': gen_quick_key(eid, user_id),
+                'atk': [chara.fromid(c['id'] // 100, c['star'], c['equip']) for c in entry['atk']],
+                'up': entry['up'],
+                'down': entry['down'],
+                'my_up': len(likes),
+                'my_down': len(dislikes),
+                'user_like': 1 if user_id in likes else -1 if user_id in dislikes else 0
+            })
+            index += 1
+        return ret
+    except Exception as e:
+        logger.exception(e)
+        return 'Arena query failed.'
 
 
 async def http_query(id_list, user_id, region=1, force=False):
@@ -185,7 +203,7 @@ async def http_query(id_list, user_id, region=1, force=False):
             logger.debug(f'len(res)={len(res)}')
         except Exception as e:
             logger.exception(e)
-            return None
+            return f'{e}'
 
         if res['code']:
             code = int(res['code'])
@@ -195,12 +213,16 @@ async def http_query(id_list, user_id, region=1, force=False):
         result_list = res['data']['result']
         result = ','.join(str(v) for v in result_list)
         jijian.add_attack(attack, result)
-        sv.logger.info('[do_query INFO]:在线查询')
+        logger.info('[do_query INFO]:在线查询')
     else:
-        result_list = str(result_list)
-        result_list = eval(result_list)
-        result_list = eval(result_list[0])
-        sv.logger.info('[do_query INFO]:本地缓存')
+        try:
+            result_list = str(result_list)
+            result_list = eval(result_list)
+            result_list = eval(result_list[0])
+            logger.info('[do_query INFO]:本地缓存')
+        except Exception as e:
+            logger.exception(e)
+            return f'{e}'
     return result_list
 
 
