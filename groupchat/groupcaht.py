@@ -1,6 +1,7 @@
 import random
 import os
 import requests
+import math
 
 from nonebot import MessageSegment
 import hoshino
@@ -199,3 +200,57 @@ async def longwangbang(bot, event):
 {msg}
 '''.strip()
     await bot.send(event, res)
+
+
+@sv.on_prefix('合刀')
+async def hedao(bot, event):
+    shanghai = event.message.extract_plain_text().strip()
+    shanghai = shanghai.split()
+    if not shanghai:
+        msg = '请输入：合刀 刀1伤害 刀2伤害 剩余血量\n如：合刀 50 60 70'
+        await bot.finish(event, msg)
+    if len(shanghai) != 3:
+        return
+    if is_number(shanghai[0]) is False:
+        return
+    if is_number(shanghai[1]) is False:
+        return
+    if is_number(shanghai[2]) is False:
+        return
+    dao_a = int(shanghai[0])
+    dao_b = int(shanghai[1])
+    current_hp = int(shanghai[2])
+    if dao_a + dao_b < current_hp:
+        await bot.finish(event, '当前合刀造成的伤害不能击杀boss')
+    # a先出
+    a_out = current_hp - dao_a
+    a_per = a_out / dao_b
+    a_t = (1 - a_per) * 90 + 10
+    a_result = math.ceil(a_t)
+    if a_result > 90:
+        a_result = 90
+    # b先出
+    b_out = current_hp - dao_b
+    b_per = b_out / dao_a
+    b_t = (1 - b_per) * 90 + 10
+    b_result = math.ceil(b_t)
+    if b_result > 90:
+        b_result = 90
+    msg = f'{dao_a}先出，另一刀可获得{a_result}秒补偿刀\n{dao_b}先出，另一刀可获得{b_result}秒补偿刀'
+    await bot.send(event, msg)
+
+
+def is_number(s):
+    '''判断是否是数字'''
+    try:
+        float(s)
+        return True
+    except ValueError:
+        pass
+    try:
+        import unicodedata
+        unicodedata.numeric(s)
+        return True
+    except (TypeError, ValueError):
+        pass
+    return False
