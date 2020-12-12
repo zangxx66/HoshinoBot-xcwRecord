@@ -3,9 +3,9 @@ import os
 import time
 from collections import defaultdict
 from hoshino import aiorequests, config, util
+from nonebot.log import logger
 
 from .. import chara
-from . import sv
 from . import data
 from .db import JijianCounter
 
@@ -14,8 +14,6 @@ try:
 except:
     import json
 
-
-logger = sv.logger
 
 '''
 Database for arena likes & dislikes
@@ -108,7 +106,8 @@ def get_true_id(quick_key: str, user_id: int) -> str:
     if not isinstance(quick_key, str) or len(quick_key) != 5:
         return None
     qkey = (quick_key + '===').encode()
-    qkey = int.from_bytes(base64.b32decode(qkey, casefold=True, map01=b'I'), 'little')
+    qkey = int.from_bytes(base64.b32decode(
+        qkey, casefold=True, map01=b'I'), 'little')
     qkey ^= mask
     return quick_key_dic.get(qkey, None)
 
@@ -128,7 +127,8 @@ async def do_query(id_list, user_id, region=1, force=False):
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36',
             'authorization': __get_auth_key()
         }
-        payload = {"_sign": "a", "def": id_list, "nonce": "a", "page": 1, "sort": 1, "ts": int(time.time()), "region": region}
+        payload = {"_sign": "a", "def": id_list, "nonce": "a",
+                   "page": 1, "sort": 1, "ts": int(time.time()), "region": region}
         logger.debug(f'Arena query {payload=}')
         try:
             resp = await aiorequests.post('https://api.pcrdfans.com/x/v1/search', headers=header, json=payload, timeout=10)
@@ -140,7 +140,8 @@ async def do_query(id_list, user_id, region=1, force=False):
 
         if res['code']:
             code = int(res['code'])
-            logger.error(f"Arena query failed.\nResponse={res}\nPayload={payload}")
+            logger.error(
+                f"Arena query failed.\nResponse={res}\nPayload={payload}")
             return f'Arena query failed.\nCode={code}'
 
         result_list = res['data']['result']
@@ -195,7 +196,8 @@ async def http_query(id_list, user_id, region=1, force=False):
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36',
             'authorization': __get_auth_key()
         }
-        payload = {"_sign": "a", "def": id_list, "nonce": "a", "page": 1, "sort": 1, "ts": int(time.time()), "region": region}
+        payload = {"_sign": "a", "def": id_list, "nonce": "a",
+                   "page": 1, "sort": 1, "ts": int(time.time()), "region": region}
         logger.debug(f'Arena query {payload=}')
         try:
             resp = await aiorequests.post('https://api.pcrdfans.com/x/v1/search', headers=header, json=payload, timeout=10)
@@ -207,7 +209,8 @@ async def http_query(id_list, user_id, region=1, force=False):
 
         if res['code']:
             code = int(res['code'])
-            logger.error(f"Arena query failed.\nResponse={res}\nPayload={payload}")
+            logger.error(
+                f"Arena query failed.\nResponse={res}\nPayload={payload}")
             return f'Arena query failed.\nCode={code}'
 
         result_list = res['data']['result']

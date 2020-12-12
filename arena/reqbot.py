@@ -1,11 +1,11 @@
 from quart import request, make_response, Response
 import asyncio
 import nonebot
+from nonebot.log import logger
 import re
 import json
 import time
 import base64
-from . import sv
 from .arena import http_query
 from .. import chara
 from itertools import zip_longest
@@ -26,7 +26,7 @@ async def query():
             response = await gen_response('error:\nwho are you')
             return response
     except Exception as ex:
-        sv.logger.error(ex)
+        logger.error(ex)
         response = await gen_response('error:\nwdnmd')
         return response
     reqs = await request.get_json()
