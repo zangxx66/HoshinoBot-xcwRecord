@@ -77,7 +77,7 @@
 |(at)今日一言||
 |(at)跟我学+内容|仅支持中英文|
 |合刀|计算尾刀补偿时间<br>指令：合刀 刀1伤害 刀2伤害 剩余血量<br>如：合刀 50 60 70|
-|/video+url|发送短视频，需要最新版本的[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)支持，依赖ffmpeg，并将<span>Thread.py</span>文件放置于hoshino目录下|  
+|/video+url|发送短视频，需要最新版本的[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)支持，依赖[ffmpeg](https://ffmpeg.org/)和[you-get](https://github.com/soimort/you-get)，并将<span>Thread.py</span>文件放置于hoshino目录下|  
 
 # PCR无关
 最近沉迷FF14的产物  
