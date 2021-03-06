@@ -91,7 +91,8 @@
 ## 食用
 1.将echo文件夹放入modules目录下，并在config里启用该模组  
 2.将record/echo文件夹放在HoshinoBot/res/record根目录下  
-**[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)0.9.28及以上版本请自行安装依赖ffmpeg，0.9.28以下版本仅支持amr格式但不依赖ffmpeg**
+**[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)0.9.28及以上版本请自行安装依赖ffmpeg，0.9.28以下版本仅支持amr格式但不依赖ffmpeg**  
+
 ## 指令
 |指令|说明|
 |-----|-----|
@@ -102,4 +103,11 @@
 |爽死了||
 |对呀对呀||
 |(我好了\|whl)||
-|(hso\|好涩噢\|好涩哦\|好色噢\|好色哦)||
+|(hso\|好涩噢\|好涩哦\|好色噢\|好色哦)||  
+
+## 猜立绘小游戏  
+魔改自猜头像，可与贵族游戏联动金币系统  
+|指令|说明|
+|-----|-----|
+|猜立绘||
+|猜立绘排行榜||
