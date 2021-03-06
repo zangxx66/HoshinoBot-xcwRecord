@@ -757,7 +757,7 @@ async def on_input_chara_name(bot, ev: CQEvent):
                 if duel._get_level(gid, uid) != 0 and daily_score_limiter.check(guid):
                     score = random.randint(100, 300)
                     score_counter = ScoreCounter2()
-                    score_counter.add_score(gid, uid, score)
+                    score_counter._add_score(gid, uid, score)
                     daily_score_limiter.increase(guid)
                     msg_part += f'\n获得金币{score}'
                 c = chara.fromid(
