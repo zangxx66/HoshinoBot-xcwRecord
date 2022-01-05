@@ -140,7 +140,7 @@ async def set_group_notice(bot, event):
 @sv.on_prefix('设置名片')
 async def set_group_card(bot, event):
     gid = event.group_id
-    msg = event.message.extract_plain_text().strip()
+    msg = event.raw_message.replace('设置名片', '').strip()
     sid = event.self_id
     uid = event.user_id
     owner = await bot.get_group_member_info(user_id=sid, group_id=gid)
@@ -152,7 +152,7 @@ async def set_group_card(bot, event):
         await bot.set_group_card(group_id=gid, user_id=uid)
         await bot.send(event, '我好了')
         return
-    match = re.match(r'^(?:\[CQ:at,qq=(\d+)\]) *(\S+)?', msg)
+    match = re.match(r'^\[CQ:at,qq=(\d+)\] *(\S+)$', msg)
     if not match:
         await bot.set_group_card(group_id=gid, user_id=uid, card=msg)
         await bot.send(event, '我好了')
