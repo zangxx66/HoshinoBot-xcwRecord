@@ -77,10 +77,10 @@ def getAvBvFromNormalLink(link):
 
 def getAvBvFromShortLink(link):
     try:
-        with requests.head(link, timeout=20) as resp:
+        with requests.get(link, timeout=20) as resp:
             status = resp.status_code
             if(status >= 200 and status < 400):
-                location = resp.headers['location']
+                location = resp.url
                 normal_link = getAvBvFromNormalLink(location)
                 return normal_link
             else:
