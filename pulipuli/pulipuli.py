@@ -3,6 +3,9 @@ import re
 import html2text
 from hoshino import Service, R
 from aiocqhttp.message import MessageSegment
+from time import time
+bv_list = []
+cd = 600        #同一个bv号在同一个群内解析的cd（单位：秒）
 
 sv = Service('pulipuli', enable_on_default=True)
 
@@ -16,7 +19,9 @@ def humanNum(num):
         return f'{b[0]}万'
 
 
-def getVideoInfo(param_aid, param_bvid):
+def getVideoInfo(param_aid, param_bvid, gid):
+    global cd, bv_list
+    exist = False
     url = f'https://api.bilibili.com/x/web-interface/view?aid={param_aid}&bvid={param_bvid}'
     try:
         with requests.get(url, timeout=20) as resp:
@@ -32,6 +37,24 @@ def getVideoInfo(param_aid, param_bvid):
             play = humanNum(view)
             danku = humanNum(danmaku)
             cover = MessageSegment.image(pic)
+            
+            current_time = time()
+            for i in range(len(bv_list)):
+                if bvid == bv_list[i]['bv'] and gid == bv_list[i]['gid']:
+                    if (current_time - bv_list[i]['time']) < cd :
+                        print('cd时间内，不解析bv号')
+                        return None
+                    else:
+                        bv_list[i]['time'] = current_time
+                exist = True
+                break
+            if exist == False:
+                new = {'bv':bvid,'gid':gid,'time':current_time}
+                bv_list.append(new)
+            if len(bv_list) > 10:
+                del bv_list[0]
+                
+            
             result = f'{cover}\nav{aid}\n{title}\nUP:{name}\n{play}播放 {danku}弹幕\nhttps://www.bilibili.com/video/{bvid}'.strip()
             return result
     except Exception as ex:
@@ -134,7 +157,7 @@ async def pulipuli(bot, event):
     if param is None:
         pass
     elif len(param) > 0:
-        reply = getVideoInfo(param['aid'], param['bvid'])
+        reply = getVideoInfo(param['aid'], param['bvid'], gid)
         if reply is not None:
             await bot.send(event, reply)
             return
