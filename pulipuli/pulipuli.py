@@ -39,11 +39,13 @@ def getVideoInfo(param_aid, param_bvid, gid):
             cover = MessageSegment.image(pic)
             
             current_time = time()
-            for i in bv_list:
-                if bvid == i['bv'] and gid == i['gid']:
-                    if (current_time - i['time']) < cd :
+            for i in range(len(bv_list)):
+                if bvid == bv_list[i]['bv'] and gid == bv_list[i]['gid']:
+                    if (current_time - bv_list[i]['time']) < cd :
                         print('cd时间内，不解析bv号')
                         return None
+                    else:
+                        bv_list[i]['time'] = current_time
                 exist = True
                 break
             if exist == False:
